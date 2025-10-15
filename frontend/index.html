@@ -186,7 +186,7 @@
             const targetLanguage = languageSelect.value;
             
             //We use 'wss://' for the secure WebSocket connection.
-            const backendHost = 'vadanuvad.com';
+            const backendHost = 'https://vadanuvad-backend.onrender.com';
             const wsUrl = `wss://${backendHost}/ws?lang=${targetLanguage}`;
             
             socket = new WebSocket(wsUrl);
