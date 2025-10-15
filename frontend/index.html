@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>वादAnuवाद - Real-Time Translation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark Gray */
+        }
+        .main-container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .mic-button {
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 1);
+        }
+        .mic-button.is-recording {
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+        .glassmorphism {
+            background: rgba(31, 41, 55, 0.6); /* Gray-800 with opacity */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="text-white">
+    <div class="main-container flex flex-col items-center justify-center min-h-screen p-4">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-bold">वाद<span class="text-sky-400">Anu</span>वाद</h1>
+            <p class="text-lg text-gray-400 mt-2">Your Real-Time Translation Companion</p>
+        </header>
+
+        <main class="w-full p-6 sm:p-8 glassmorphism">
+
+            <div class="mb-6">
+                <label for="language-select" class="block mb-2 text-sm font-medium text-gray-300">Translate To:</label>
+                <select id="language-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-full p-2.5">
+                    <!-- Languages will be populated by JS -->
+                </select>
+            </div>
+
+            <div class="flex flex-col items-center justify-center space-y-4 mb-6">
+                <button id="mic-button" class="mic-button bg-sky-500 hover:bg-sky-600 rounded-full w-24 h-24 flex items-center justify-center text-white focus:outline-none">
+                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8h-1a6 6 0 11-12 0H3a7.001 7.001 0 006 6.93V17H7v1h6v-1h-2v-2.07z" clip-rule="evenodd"></path></svg>
+                </button>
+                <div id="status" class="text-gray-400 text-sm h-5">Status: Ready</div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-gray-900/50 p-4 rounded-lg min-h-[100px]">
+                    <h3 class="font-semibold text-sky-300 mb-2">Detected Speech:</h3>
+                    <p id="original-text" class="text-gray-200"></p>
+                </div>
+                <div class="bg-gray-900/50 p-4 rounded-lg min-h-[100px]">
+                    <h3 class="font-semibold text-sky-300 mb-2">Translation:</h3>
+                    <p id="translated-text" class="text-gray-200"></p>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="absolute bottom-4 text-center w-full">
+            <p class="text-sm text-gray-500">
+                Made with <span class="text-red-500">&hearts;</span> by 
+                <a href="https://www.linkedin.com/in/ayushmishra77/" target="_blank" rel="noopener noreferrer" class="hover:text-sky-400 transition-colors">
+                    Ayush Mishra
+                </a> | 
+                <a href="mailto:ayush963ash@gmail.com" class="hover:text-sky-400 transition-colors">
+                    ayush963ash@gmail.com
+                </a>
+            </p>
+        </footer>
+
+    </div>
+
+    <script>
+        // we use SpeechRecognition if available, with vendor prefixes
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Sorry, your browser does not support Speech Recognition. Please try Google Chrome.");
+        }
+        const recognition = new SpeechRecognition();
+
+        const micButton = document.getElementById('mic-button');
+        const statusDiv = document.getElementById('status');
+        const originalTextDiv = document.getElementById('original-text');
+        const translatedTextDiv = document.getElementById('translated-text');
+        const languageSelect = document.getElementById('language-select');
+
+        let isRecording = false;
+        let socket;
+        let finalTranscript = '';
+
+        const languages = {
+            'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German', 'hi': 'Hindi', 'kn': 'Kannada', 
+            'ta': 'Tamil', 'te': 'Telugu', 'mr': 'Marathi', 'bn': 'Bengali', 'gu': 'Gujarati', 'pa': 'Punjabi', 
+            'ja': 'Japanese', 'ko': 'Korean', 'zh-cn': 'Chinese (Simplified)', 'ru': 'Russian', 'ar': 'Arabic'
+        };
+
+        for (const [code, name] of Object.entries(languages)) {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = name;
+            if (code === 'hi') option.selected = true;
+            languageSelect.appendChild(option);
+        }
+
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            isRecording = true;
+            micButton.classList.add('is-recording');
+            micButton.classList.replace('bg-sky-500', 'bg-red-500');
+            micButton.classList.replace('hover:bg-sky-600', 'hover:bg-red-600');
+            statusDiv.textContent = 'Listening... Press to stop.';
+        };
+
+        recognition.onend = () => {
+            isRecording = false;
+            micButton.classList.remove('is-recording');
+            micButton.classList.replace('bg-red-500', 'bg-sky-500');
+            micButton.classList.replace('hover:bg-red-600', 'hover:bg-sky-600');
+            statusDiv.textContent = 'Status: Ready';
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        };
+        
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error:", event.error);
+            statusDiv.textContent = `Error: ${event.error}`;
+        };
+
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    const finalChunk = event.results[i][0].transcript;
+                    finalTranscript += finalChunk + '. ';
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({ text: finalChunk }));
+                    }
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            originalTextDiv.textContent = finalTranscript + interimTranscript;
+        };
+
+        micButton.addEventListener('click', () => {
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                startSession();
+            }
+        });
+
+        function startSession() {
+            finalTranscript = '';
+            originalTextDiv.textContent = '';
+            translatedTextDiv.textContent = '';
+            const targetLanguage = languageSelect.value;
+            
+            //We use 'wss://' for the secure WebSocket connection.
+            const backendHost = 'vadanuvad.com';
+            const wsUrl = `wss://${backendHost}/ws?lang=${targetLanguage}`;
+            
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                console.log("WebSocket connection established for translation.");
+                recognition.start();
+            };
+            
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.translated) {
+                    translatedTextDiv.textContent += data.translated + ' ';
+                } else if (data.error) {
+                    console.error("Translation error:", data.error);
+                }
+            };
+            
+            socket.onerror = (error) => {
+                console.error("WebSocket error:", error);
+                statusDiv.textContent = 'Connection error.';
+            };
+
+            socket.onclose = () => {
+                console.log("WebSocket connection closed.");
+                if (isRecording) {
+                    recognition.stop();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
