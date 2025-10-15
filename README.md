@@ -2,10 +2,10 @@
 ![front-page](image.png)
 A functional web application that serves as a prototype for real-time, in-browser speech-to-text transcription and instant translation.
 
-**Problem Statement**
+**Problem Statement**<br />
 Breaking down language barriers for travelers and individuals communicating with people who speak a different language.
 
-**✨ Core Functions**
+**✨ Core Functions**<br />
 This application provides a seamless and intuitive interface for instant communication across languages.
 
 Real-Time Transcription: Utilizes the browser's built-in Web Speech API to capture and convert spoken words into text as you speak.
@@ -18,10 +18,10 @@ Mobile-First Design: A clean, responsive user interface built with Tailwind CSS 
 
 Progressive Web App (PWA): Can be easily "installed" on a mobile device's home screen for an app-like experience.
 
-**🛠️ Tech Stack**
+**🛠️ Tech Stack**<br />
 This project uses a modern, efficient stack to handle real-time communication between the client and the server.
 
-**Frontend**
+**Frontend**<br />
 HTML5
 
 Tailwind CSS for styling.
@@ -30,7 +30,7 @@ JavaScript (Vanilla) for client-side logic.
 
 Web Speech API for in-browser speech recognition.
 
-**Backend**
+**Backend**<br />
 Python 3
 
 FastAPI for creating the high-performance API.
@@ -41,12 +41,12 @@ Uvicorn as the ASGI server.
 
 googletrans library for the translation service.
 
-**Deployment**
+**Deployment**<br />
 Backend: Deployed on Render.
 
 Frontend: Deployed on Netlify.
 
-**🚀 Future Scalability & Improvements**
+**🚀 Future Scalability & Improvements**<br />
 This prototype serves as a strong foundation. Future enhancements could include:
 
 Upgrading the Translation Service: Integrating a more robust, production-grade API like the official Google Cloud Translate API or DeepL API to handle higher traffic and provide more accurate translations.
